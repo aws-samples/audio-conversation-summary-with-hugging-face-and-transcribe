@@ -32,7 +32,7 @@ Run the following commands in your terminal after having cloned the repository.
 
 1. Download latest version of Python: https://www.python.org/downloads/ (This project was set up with python version 3.9.7)
 2. Download Visual Studio Code: https://code.visualstudio.com
-3. Clone the git repository: https://gitlab.aws.dev/garoga/time-series-encodings
+3. Clone the git repository: https://gitlab.aws.dev/sentichime/text-summarization.git
 3. Create a virtual environment locally:
 ```
 python3 -m venv .venv
