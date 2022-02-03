@@ -117,6 +117,7 @@ class InfrastructureStack(Stack):
         # SNS
         topic = _sns.Topic(self, "Topic", display_name="Send Summary Topic")
 
+        summary_bucket = _s3.Bucket(self, "summary-bucket")
         huggingface_model = "google/pegasus-large"
         huggingface_task = "summarization"
         instance_type = "ml.m5.xlarge"
@@ -163,7 +164,13 @@ class InfrastructureStack(Stack):
                     variant_name=model.model_name,
                 )
             ],
+            async_inference_config=sagemaker.CfnEndpointConfig.AsyncInferenceConfigProperty(
+                output_config=sagemaker.CfnEndpointConfig.AsyncInferenceOutputConfigProperty(
+                    s3_output_path=summary_bucket.url_for_object()
+                ),
+            ),
         )
+
         endpoint = sagemaker.CfnEndpoint(
             self,
             "summarization_endpoint",
