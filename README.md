@@ -2,7 +2,7 @@
 
 
 <center>
-<img src="text-summarization/AD.jpeg" width=1000/>
+<img src="text-summarization/AD.jpg" width=1000/>
 </center>
 
 ---
