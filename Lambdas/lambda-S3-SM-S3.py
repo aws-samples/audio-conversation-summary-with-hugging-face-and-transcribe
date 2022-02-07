@@ -108,6 +108,7 @@ def lambda_handler(event, context):
     n = 2000
     segments = [result[i:i+n] for i in range(0, len(result), n)]
     print(segments)
+    print(len(segments))
     
     for segment in segments: 
     
