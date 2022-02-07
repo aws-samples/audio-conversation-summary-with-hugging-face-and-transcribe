@@ -2,7 +2,7 @@
 
 
 <center>
-<img src="AD.PNG" width=1000/>
+    <img src="AD.png" width=1000/>
 </center>
 
 ---
@@ -21,12 +21,6 @@ In this project an application has been developed that is able to summarize a di
 
 <!-- For this application, all services have been provisioned on the AWS Console and hence no IaC script is currently available. Nonetheless we provide all the details needed to recreate the application quickly in a new account. This includes an Architecture Diagram and multiple code scripts used for the Lambda function as well as data preprocessing and training scripts. Finally we also provide the input data to train, validate and test the model. -->
 This project provides Infrastructure-as-Code (IaC) scripts via CDK that can be used to deploy all resources to a specified account and region. This allows to test the application directly and make adjustments quickly. A clear set of guidelines for deployment are provided below under *How to deploy the CDK Stack ?*
-
-<!-- ### Architecture Diagram -->
-
-<!-- <center> -->
-<!-- <img src="Architecture Diagram.png" width=600/> -->
-<!-- </center> -->
 
 ### How to setup your coding Environment (assuming you use a MAC OS) ?
 
