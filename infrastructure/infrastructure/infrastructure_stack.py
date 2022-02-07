@@ -117,6 +117,7 @@ class InfrastructureStack(Stack):
         # SNS
         topic = _sns.Topic(self, "Topic", display_name="Send Summary Topic")
 
+       # SageMaker Endpoint 
         summary_bucket = _s3.Bucket(self, "summary-bucket")
         huggingface_model = "google/pegasus-large"
         huggingface_task = "summarization"
