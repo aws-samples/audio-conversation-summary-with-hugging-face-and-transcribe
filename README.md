@@ -2,7 +2,7 @@
 
 
 <center>
-<img src="Architecture Diagram.png" width=1000/>
+<img src="AD.PNG" width=1000/>
 </center>
 
 ---
