@@ -48,7 +48,7 @@ def lambda_handler(event, context):
               },
               
         OutputBucketName='summary-transcript',
-        #OutputKey='string',
+        OutputKey='TranscribeOutput/',
         )
     
     

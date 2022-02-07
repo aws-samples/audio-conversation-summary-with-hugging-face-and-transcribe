@@ -14,12 +14,21 @@ def lambda_handler(event, context):
     response = s3.get_object(Bucket=bucket, Key=key) 
     
     content = json.loads(response['Body'].read())
-    print(content[0]['generated_text'])
     
-    response = send_request(content[0]['generated_text'])
+    content_dic = content[0]
     
-
-
+    if 'summary_text' in content_dic: 
+        
+        response = send_request(content[0]['summary_text'])
+        
+    elif 'generated_text' in content_dic: 
+        
+        response = send_request(content[0]['generated_text'])
+    
+    else:
+        response = send_request(content[0])
+    
+    
 def send_request(body):
     
     # Create an SNS client

@@ -1,0 +1,48 @@
+"AWSLambdaBasicExecutionRole-f0c931d9-5276-421a-a285-158e91350017" 
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:eu-west-1:847651797386:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:eu-west-1:847651797386:log-group:/aws/lambda/MeetingSummaryPublish-S3-SNS:*"
+            ]
+        }
+    ]
+}
+
+"s3-summary-output-get"
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::summary-output/*"
+        }
+    ]
+}
+
+"SNS-Summary-Publish"
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": "sns:Publish",
+            "Resource": "arn:aws:sns:eu-west-1:847651797386:MeetingSummary"
+        }
+    ]
+}
