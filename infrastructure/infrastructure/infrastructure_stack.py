@@ -91,28 +91,57 @@ class InfrastructureStack(Stack):
             auto_delete_objects=True,
         )
 
-        # Lambda
-        my_function_handler = _lambda.Function(
+        # Lambda: s3-sm-s3
+        my_function_handler_s3_sm_s3 = _lambda.Function(
             self,
-            "lambda_handler",
+            "lambda_handler_s3_sm_s3",
             runtime=_lambda.Runtime.PYTHON_3_8,
-            code=_lambda.Code.from_asset("resources"),
-            handler="lambda.lambda_handler",
+            code=_lambda.Code.from_asset("resources/lambda-s3-sm-s3"),
+            handler="lambda.lambda_handler_s3_sm_s3",
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
-        bucket.grant_read_write(my_function_handler)
+        bucket.grant_read_write(my_function_handler_s3_sm_s3)
 
-        # DynamoDB
-        table = _dynamodb.Table(
+        # Lambda: s3-sns
+        my_function_handler_s3_sns = _lambda.Function(
             self,
-            "Table",
-            partition_key=_dynamodb.Attribute(
-                name="id", type=_dynamodb.AttributeType.STRING
-            ),
+            "lambda_handler_s3_sns",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
+            handler="lambda.lambda_handler_s3_sns",
+            environment={
+                "BUCKET_NAME": bucket.bucket_name,
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
         )
+        bucket.grant_read_write(my_function_handler_s3_sns)
+
+        # Lambda: s3-transcribe
+        my_function_handler_s3_transcribe = _lambda.Function(
+            self,
+            "lambda_handler_s3_transcribe",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
+            handler="lambda.lambda_handler_s3_transcribe",
+            environment={
+                "BUCKET_NAME": bucket.bucket_name,
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
+        )
+        bucket.grant_read_write(my_function_handler_s3_transcribe)
+
+
+        # # DynamoDB
+        # table = _dynamodb.Table(
+        #     self,
+        #     "Table",
+        #     partition_key=_dynamodb.Attribute(
+        #         name="id", type=_dynamodb.AttributeType.STRING
+        #     ),
+        # )
 
         # SNS
         topic = _sns.Topic(self, "Topic", display_name="Send Summary Topic")
