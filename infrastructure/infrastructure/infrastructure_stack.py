@@ -83,9 +83,25 @@ class InfrastructureStack(Stack):
         # (VPC)
 
         # S3 Bucket
-        bucket = _s3.Bucket(
+        bucket_recordings = _s3.Bucket(
             self,
-            "text-summarization-bucket",
+            "bucket_recordings",
+            versioned=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
+        bucket_transcriptions = _s3.Bucket(
+            self,
+            "bucket_transcriptions",
+            versioned=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
+        bucket_predictions = _s3.Bucket(
+            self,
+            "bucket_predictions",
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -97,13 +113,13 @@ class InfrastructureStack(Stack):
             "lambda_handler_s3_sm_s3",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-sm-s3"),
-            handler="lambda.lambda_handler_s3_sm_s3",
+            handler="index.lambda_handler",
             environment={
-                "BUCKET_NAME": bucket.bucket_name,
+                "BUCKET_NAME": bucket_recordings.bucket_name,
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
-        bucket.grant_read_write(my_function_handler_s3_sm_s3)
+        bucket_recordings.grant_read_write(my_function_handler_s3_sm_s3)
 
         # Lambda: s3-sns
         my_function_handler_s3_sns = _lambda.Function(
@@ -111,13 +127,13 @@ class InfrastructureStack(Stack):
             "lambda_handler_s3_sns",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
-            handler="lambda.lambda_handler_s3_sns",
+            handler="index.lambda_handler",
             environment={
-                "BUCKET_NAME": bucket.bucket_name,
+                "BUCKET_NAME": bucket_predictions.bucket_name,
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
-        bucket.grant_read_write(my_function_handler_s3_sns)
+        bucket_predictions.grant_read_write(my_function_handler_s3_sns)
 
         # Lambda: s3-transcribe
         my_function_handler_s3_transcribe = _lambda.Function(
@@ -125,23 +141,13 @@ class InfrastructureStack(Stack):
             "lambda_handler_s3_transcribe",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
-            handler="lambda.lambda_handler_s3_transcribe",
+            handler="index.lambda_handler",
             environment={
-                "BUCKET_NAME": bucket.bucket_name,
+                "BUCKET_NAME": bucket_transcriptions.bucket_name,
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
-        bucket.grant_read_write(my_function_handler_s3_transcribe)
-
-
-        # # DynamoDB
-        # table = _dynamodb.Table(
-        #     self,
-        #     "Table",
-        #     partition_key=_dynamodb.Attribute(
-        #         name="id", type=_dynamodb.AttributeType.STRING
-        #     ),
-        # )
+        bucket_transcriptions.grant_read_write(my_function_handler_s3_transcribe)
 
         # SNS
         topic = _sns.Topic(self, "Topic", display_name="Send Summary Topic")

@@ -21,7 +21,7 @@ s3_client = S.client('s3')
 ts_client = S.client('transcribe')
 
 
-def lambda_handler(event, context):
+def lambda_handler_s3_transcribe(event, context):
     
     
     # take the result from the export from the DynamoDB 
@@ -48,15 +48,9 @@ def lambda_handler(event, context):
               },
               
         OutputBucketName='summary-transcript',
-        #OutputKey='string',
+        OutputKey='TranscribeOutput/',
         )
     
     
 # print the result in the terminal, make sure you get the S3 URL to download the transcript JSON file
  
-    
-    
-        
-    
-        
-
