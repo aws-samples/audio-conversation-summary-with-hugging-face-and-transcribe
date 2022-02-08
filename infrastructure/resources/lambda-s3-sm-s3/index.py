@@ -18,7 +18,7 @@ s3_client = S.client('s3')
 sagemaker_client = S.client('sagemaker')
 
 
-def lambda_handler_s3_sm_s3(event, context):
+def lambda_handler(event, context):
     
     # take the result uploaded by 
     bucket = event['Records'][0]['s3']['bucket']['name']

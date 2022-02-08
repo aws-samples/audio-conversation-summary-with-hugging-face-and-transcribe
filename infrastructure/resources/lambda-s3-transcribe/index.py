@@ -21,7 +21,7 @@ s3_client = S.client('s3')
 ts_client = S.client('transcribe')
 
 
-def lambda_handler_s3_transcribe(event, context):
+def lambda_handler(event, context):
     
     
     # take the result from the export from the DynamoDB 
@@ -47,7 +47,7 @@ def lambda_handler_s3_transcribe(event, context):
               'MaxSpeakerLabels': 10,
               },
               
-        OutputBucketName='summary-transcript',
+        OutputBucketName='infrastructurestack-buckettranscriptions97f46036-10x73hv781y2q',
         OutputKey='TranscribeOutput/',
         )
     

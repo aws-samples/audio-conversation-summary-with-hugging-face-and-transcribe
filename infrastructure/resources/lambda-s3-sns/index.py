@@ -5,7 +5,7 @@ import urllib
 
 s3 = boto3.client('s3')
 
-def lambda_handler_s3_sns(event, context):
+def lambda_handler(event, context):
     
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')

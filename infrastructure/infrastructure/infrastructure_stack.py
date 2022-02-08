@@ -7,6 +7,7 @@ from aws_cdk import (
     # aws_s3_deployment as s3deploy,
     aws_dynamodb as _dynamodb,
     aws_sns as _sns,
+    aws_sns_subscriptions as _sns_subscriptions,
     aws_iam as iam,
     aws_sagemaker as sagemaker,
     Environment,
@@ -89,7 +90,7 @@ class InfrastructureStack(Stack):
         # S3 Buckets
         bucket_recordings = _s3.Bucket(
             self,
-            "bucket_recordings",
+            "BucketRecordings",
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -97,7 +98,7 @@ class InfrastructureStack(Stack):
 
         bucket_transcriptions = _s3.Bucket(
             self,
-            "bucket_transcriptions",
+            "BucketTranscriptions",
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -105,7 +106,7 @@ class InfrastructureStack(Stack):
 
         bucket_predictions = _s3.Bucket(
             self,
-            "bucket_predictions",
+            "BucketPredictions",
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -113,9 +114,9 @@ class InfrastructureStack(Stack):
 
         # SNS
         topic = _sns.Topic(self, "MeetingSummary", display_name="MeetingSummary")
+        topic.add_subscription(_sns_subscriptions.EmailSubscription("liurundo@amazon.com"))
 
        # SageMaker Endpoint 
-        summary_bucket = _s3.Bucket(self, "summary-bucket")
         huggingface_model = "google/pegasus-large"
         huggingface_task = "summarization"
         instance_type = "ml.m5.xlarge"
@@ -164,7 +165,7 @@ class InfrastructureStack(Stack):
             ],
             async_inference_config=sagemaker.CfnEndpointConfig.AsyncInferenceConfigProperty(
                 output_config=sagemaker.CfnEndpointConfig.AsyncInferenceOutputConfigProperty(
-                    s3_output_path=summary_bucket.url_for_object()
+                    s3_output_path=bucket_predictions.url_for_object()
                 ),
             ),
         )
@@ -179,7 +180,7 @@ class InfrastructureStack(Stack):
         endpoint_configuration.add_depends_on(model)
         endpoint.add_depends_on(endpoint_configuration)
 
-        # Lambda: s3-sm-s3
+        # Lambda: s3_transcribe
         my_function_handler_s3_transcribe = _lambda.Function(
             self,
             "lambda_handler_s3_transcribe",
@@ -206,10 +207,11 @@ class InfrastructureStack(Stack):
                                                                             actions= ["transcribe:GetTranscriptionJob","transcribe:StartTranscriptionJob"],
                                                                             resources=["*"]))
 
+
         # S3 Trigger
         notification_recordings = s3_notify.LambdaDestination(my_function_handler_s3_transcribe)
         notification_recordings.bind(self, bucket_recordings)
-        bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix='.wav'))
+        bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix='.mp4'))
 
         # Lambda: s3-sns
         my_function_handler_s3_sns = _lambda.Function(
@@ -220,6 +222,7 @@ class InfrastructureStack(Stack):
             handler="index.lambda_handler",
             environment={
                 "BUCKET_NAME": bucket_predictions.bucket_name,
+                "EMAIL_TOPIC_ARN": topic.topic_arn
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
@@ -237,12 +240,11 @@ class InfrastructureStack(Stack):
         
         my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["sns:Publish"],
-                                                                            resources=[f"arn:aws:sns:{account_region}:{account_id}:MeetingSummary"]))
+                                                                            resources=["*"]))
 
         # Trigger
         notification_predictions = s3_notify.LambdaDestination(my_function_handler_s3_sns)
         notification_predictions.bind(self, bucket_predictions)
-        bucket_predictions.add_object_created_notification(notification_predictions)
         bucket_predictions.add_object_created_notification(notification_predictions, _s3.NotificationKeyFilter(suffix='.out'))
 
         # Lambda: s3-sm-s3
@@ -261,6 +263,7 @@ class InfrastructureStack(Stack):
         
         # Permissions
         bucket_transcriptions.grant_read_write(my_function_handler_s3_sm_s3)
+        bucket_transcriptions.grant_read_write(my_function_handler_s3_transcribe)
 
         my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["logs:CreateLogGroup"],
@@ -274,6 +277,10 @@ class InfrastructureStack(Stack):
                                                                             actions= ["transcribe:GetTranscriptionJob",
                                                                                       "transcribe:StartTranscriptionJob"],
                                                                             resources=["*"]))
+
+        my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["sagemaker:InvokeEndpointAsync"],
+                                                                            resources=[f"arn:aws:sagemaker:{account_region}:{account_id}:endpoint/{endpoint.endpoint_name}"]))
 
         # Trigger
         notification_transcriptions= s3_notify.LambdaDestination(my_function_handler_s3_sm_s3)
