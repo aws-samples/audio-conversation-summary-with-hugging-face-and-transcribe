@@ -2,6 +2,7 @@ from aws_cdk import (
     Stack,
     aws_lambda as _lambda,
     aws_s3 as _s3,
+    aws_s3_notifications as s3_notify,
     RemovalPolicy,
     # aws_s3_deployment as s3deploy,
     aws_dynamodb as _dynamodb,
@@ -11,6 +12,11 @@ from aws_cdk import (
     Environment,
 )
 from constructs import Construct
+import boto3
+
+sts = boto3.client("sts")
+account_id = sts.get_caller_identity()["Account"]
+account_region = "us-east-2"
 
 LATEST_PYTORCH_VERSION = "1.8.1"
 LATEST_TRANSFORMERS_VERSION = "4.10.2"
@@ -80,9 +86,7 @@ class InfrastructureStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # (VPC)
-
-        # S3 Bucket
+        # S3 Buckets
         bucket_recordings = _s3.Bucket(
             self,
             "bucket_recordings",
@@ -107,50 +111,8 @@ class InfrastructureStack(Stack):
             auto_delete_objects=True,
         )
 
-        # Lambda: s3-sm-s3
-        my_function_handler_s3_sm_s3 = _lambda.Function(
-            self,
-            "lambda_handler_s3_sm_s3",
-            runtime=_lambda.Runtime.PYTHON_3_8,
-            code=_lambda.Code.from_asset("resources/lambda-s3-sm-s3"),
-            handler="index.lambda_handler",
-            environment={
-                "BUCKET_NAME": bucket_recordings.bucket_name,
-                # "KEY": self.node.try_get_context("s3_lexicon_key")
-            },
-        )
-        bucket_recordings.grant_read_write(my_function_handler_s3_sm_s3)
-
-        # Lambda: s3-sns
-        my_function_handler_s3_sns = _lambda.Function(
-            self,
-            "lambda_handler_s3_sns",
-            runtime=_lambda.Runtime.PYTHON_3_8,
-            code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
-            handler="index.lambda_handler",
-            environment={
-                "BUCKET_NAME": bucket_predictions.bucket_name,
-                # "KEY": self.node.try_get_context("s3_lexicon_key")
-            },
-        )
-        bucket_predictions.grant_read_write(my_function_handler_s3_sns)
-
-        # Lambda: s3-transcribe
-        my_function_handler_s3_transcribe = _lambda.Function(
-            self,
-            "lambda_handler_s3_transcribe",
-            runtime=_lambda.Runtime.PYTHON_3_8,
-            code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
-            handler="index.lambda_handler",
-            environment={
-                "BUCKET_NAME": bucket_transcriptions.bucket_name,
-                # "KEY": self.node.try_get_context("s3_lexicon_key")
-            },
-        )
-        bucket_transcriptions.grant_read_write(my_function_handler_s3_transcribe)
-
         # SNS
-        topic = _sns.Topic(self, "Topic", display_name="Send Summary Topic")
+        topic = _sns.Topic(self, "MeetingSummary", display_name="MeetingSummary")
 
        # SageMaker Endpoint 
         summary_bucket = _s3.Bucket(self, "summary-bucket")
@@ -216,3 +178,104 @@ class InfrastructureStack(Stack):
 
         endpoint_configuration.add_depends_on(model)
         endpoint.add_depends_on(endpoint_configuration)
+
+        # Lambda: s3-sm-s3
+        my_function_handler_s3_transcribe = _lambda.Function(
+            self,
+            "lambda_handler_s3_transcribe",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
+            handler="index.lambda_handler",
+            environment={
+                "BUCKET_NAME": bucket_recordings.bucket_name,
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
+        )
+        
+        # Permissions
+        bucket_recordings.grant_read_write(my_function_handler_s3_transcribe)
+        my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogGroup"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:*"]))
+
+        my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogStream","logs:PutLogEvents"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_transcribe:*"]))
+        
+        my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["transcribe:GetTranscriptionJob","transcribe:StartTranscriptionJob"],
+                                                                            resources=["*"]))
+
+        # S3 Trigger
+        notification_recordings = s3_notify.LambdaDestination(my_function_handler_s3_transcribe)
+        notification_recordings.bind(self, bucket_recordings)
+        bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix='.wav'))
+
+        # Lambda: s3-sns
+        my_function_handler_s3_sns = _lambda.Function(
+            self,
+            "lambda_handler_s3_sns",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
+            handler="index.lambda_handler",
+            environment={
+                "BUCKET_NAME": bucket_predictions.bucket_name,
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
+        )
+
+        # Permissions
+        bucket_predictions.grant_read_write(my_function_handler_s3_sns)
+
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogGroup"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:*"]))
+
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogStream","logs:PutLogEvents"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sns:*"]))
+        
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["sns:Publish"],
+                                                                            resources=[f"arn:aws:sns:{account_region}:{account_id}:MeetingSummary"]))
+
+        # Trigger
+        notification_predictions = s3_notify.LambdaDestination(my_function_handler_s3_sns)
+        notification_predictions.bind(self, bucket_predictions)
+        bucket_predictions.add_object_created_notification(notification_predictions)
+        bucket_predictions.add_object_created_notification(notification_predictions, _s3.NotificationKeyFilter(suffix='.out'))
+
+        # Lambda: s3-sm-s3
+        my_function_handler_s3_sm_s3 = _lambda.Function(
+            self,
+            "lambda_handler_s3_sm_s3",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-sm-s3"),
+            handler="index.lambda_handler",
+            environment={
+                "BUCKET_NAME": bucket_transcriptions.bucket_name,
+                "SM_ENDPOINT": endpoint.endpoint_name
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
+        )
+        
+        # Permissions
+        bucket_transcriptions.grant_read_write(my_function_handler_s3_sm_s3)
+
+        my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogGroup"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:*"]))
+
+        my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogStream","logs:PutLogEvents"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sm_s3:*"]))
+        
+        my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["transcribe:GetTranscriptionJob",
+                                                                                      "transcribe:StartTranscriptionJob"],
+                                                                            resources=["*"]))
+
+        # Trigger
+        notification_transcriptions= s3_notify.LambdaDestination(my_function_handler_s3_sm_s3)
+        notification_transcriptions.bind(self, bucket_transcriptions)
+        bucket_transcriptions.add_object_created_notification(notification_transcriptions, _s3.NotificationKeyFilter(suffix='.json',prefix="TranscribeOutput/"))
