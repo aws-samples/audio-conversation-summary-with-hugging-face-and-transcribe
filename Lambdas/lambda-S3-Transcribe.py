@@ -48,7 +48,7 @@ def lambda_handler_s3_transcribe(event, context):
               },
               
         OutputBucketName='summary-transcript',
-        #OutputKey='string',
+        OutputKey='TranscribeOutput/',
         )
     
     
