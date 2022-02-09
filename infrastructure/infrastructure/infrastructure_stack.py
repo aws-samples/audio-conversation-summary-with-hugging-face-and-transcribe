@@ -14,6 +14,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import boto3
+import json
 
 sts = boto3.client("sts")
 account_id = sts.get_caller_identity()["Account"]
@@ -114,7 +115,9 @@ class InfrastructureStack(Stack):
 
         # SNS
         topic = _sns.Topic(self, "MeetingSummary", display_name="MeetingSummary")
-        topic.add_subscription(_sns_subscriptions.EmailSubscription("liurundo@amazon.com"))
+        with open('infrastructure/email_addresses.json', 'r') as f:
+            email_add = json.load(f)
+        topic.add_subscription(_sns_subscriptions.EmailSubscription(email_add["email_addresses"][0]))
 
        # SageMaker Endpoint 
         huggingface_model = "google/pegasus-large"
@@ -208,44 +211,10 @@ class InfrastructureStack(Stack):
                                                                             resources=["*"]))
 
 
-        # S3 Trigger
+        # Trigger
         notification_recordings = s3_notify.LambdaDestination(my_function_handler_s3_transcribe)
         notification_recordings.bind(self, bucket_recordings)
         bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix='.mp4'))
-
-        # Lambda: s3-sns
-        my_function_handler_s3_sns = _lambda.Function(
-            self,
-            "lambda_handler_s3_sns",
-            runtime=_lambda.Runtime.PYTHON_3_8,
-            code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
-            handler="index.lambda_handler",
-            environment={
-                "BUCKET_NAME": bucket_predictions.bucket_name,
-                "EMAIL_TOPIC_ARN": topic.topic_arn
-                # "KEY": self.node.try_get_context("s3_lexicon_key")
-            },
-        )
-
-        # Permissions
-        bucket_predictions.grant_read_write(my_function_handler_s3_sns)
-
-        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
-                                                                            actions= ["logs:CreateLogGroup"],
-                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:*"]))
-
-        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
-                                                                            actions= ["logs:CreateLogStream","logs:PutLogEvents"],
-                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sns:*"]))
-        
-        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
-                                                                            actions= ["sns:Publish"],
-                                                                            resources=["*"]))
-
-        # Trigger
-        notification_predictions = s3_notify.LambdaDestination(my_function_handler_s3_sns)
-        notification_predictions.bind(self, bucket_predictions)
-        bucket_predictions.add_object_created_notification(notification_predictions, _s3.NotificationKeyFilter(suffix='.out'))
 
         # Lambda: s3-sm-s3
         my_function_handler_s3_sm_s3 = _lambda.Function(
@@ -286,3 +255,37 @@ class InfrastructureStack(Stack):
         notification_transcriptions= s3_notify.LambdaDestination(my_function_handler_s3_sm_s3)
         notification_transcriptions.bind(self, bucket_transcriptions)
         bucket_transcriptions.add_object_created_notification(notification_transcriptions, _s3.NotificationKeyFilter(suffix='.json',prefix="TranscribeOutput/"))
+
+        # Lambda: s3-sns
+        my_function_handler_s3_sns = _lambda.Function(
+            self,
+            "lambda_handler_s3_sns",
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
+            handler="index.lambda_handler",
+            environment={
+                "BUCKET_NAME": bucket_predictions.bucket_name,
+                "EMAIL_TOPIC_ARN": topic.topic_arn
+                # "KEY": self.node.try_get_context("s3_lexicon_key")
+            },
+        )
+
+        # Permissions
+        bucket_predictions.grant_read_write(my_function_handler_s3_sns)
+
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogGroup"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:*"]))
+
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["logs:CreateLogStream","logs:PutLogEvents"],
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sns:*"]))
+        
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["sns:Publish"],
+                                                                            resources=["*"]))
+
+        # Trigger
+        notification_predictions = s3_notify.LambdaDestination(my_function_handler_s3_sns)
+        notification_predictions.bind(self, bucket_predictions)
+        bucket_predictions.add_object_created_notification(notification_predictions, _s3.NotificationKeyFilter(suffix='.out'))
