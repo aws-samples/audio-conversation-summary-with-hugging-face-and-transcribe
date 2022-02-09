@@ -20,67 +20,59 @@ In this project an application has been developed that is able to summarize a di
 ## How can this Project be used?
 
 <!-- For this application, all services have been provisioned on the AWS Console and hence no IaC script is currently available. Nonetheless we provide all the details needed to recreate the application quickly in a new account. This includes an Architecture Diagram and multiple code scripts used for the Lambda function as well as data preprocessing and training scripts. Finally we also provide the input data to train, validate and test the model. -->
-This project provides Infrastructure-as-Code (IaC) scripts via CDK that can be used to deploy all resources to a specified account and region. This allows to test the application directly and make adjustments quickly. A clear set of guidelines for deployment are provided below under *How to deploy the CDK Stack ?*
+This project provides Infrastructure-as-Code (IaC) scripts based on AWS CDK written in Python language. This can be used to deploy all resources to a specified account and region and allows to test the application only within a few minutes. If you haven't used CDK before checkout the AWS developer guide https://docs.aws.amazon.com/cdk/v2/guide/home.html and make sure to install the cdk library and toolkitA clear set of guidelines for deployment are provided below under **How to deploy the CDK Stack (Mac OS) ?**
 
-### How to setup your coding Environment (assuming you use a MAC OS) ?
-
-Run the following commands in your terminal after having cloned the repository.
+### How to setup your coding Environment?
 
 1. Download latest version of Python 3: https://www.python.org/downloads/
 2. Download Visual Studio Code: https://code.visualstudio.com
 3. Clone the git repository: https://gitlab.aws.dev/sentichime/text-summarization.git
-3. Create a virtual environment locally:
+
+### How to deploy the CDK Stack (Mac OS)?
+
+First "cd" into the infrastructure directory and setup your virtual environment using python
 ```
 python3 -m venv .venv
 ```
-4. Activate the virtual environment: 
+
+Activate the virtual environment: 
 ```
 source .venv/bin/activate
 ```
-5. Install the required packages:
+Install the required packages:
 
 ```
 pip install -r requirements.txt
 ```
 
-### How to deploy the CDK Stack ?
-
-Export your account credentials as environment variables:
-
+Assume your isengard account
 ```
-export AWS_ACCESS_KEY_ID=XXX
-export AWS_SECRET_ACCESS_KEY=XXX
-export AWS_SESSION_TOKEN=XXX
+isengardcli assume
 ```
 
-From within the Infrastructure directory run the following command and specify your Account ID as well as the Region in which the stack is deployed to:
-
-```
-cdk-deploy-to.sh <Account ID> <Region> "$@"
-```
-
-If you run cdk for the first time in your account in the region you specified, you need to bootstrap cdk first:
-
+If you run cdk for the first time in your account and region you specified, you need to bootstrap cdk first:
 ```
 cdk bootstrap
 ```
-When making infrastructure adjustment you can check the differences before deploying by running the cdk diff command:
 
+At this point you can now synthesize the CloudFormation template for this code:
+```
+cdk synth
+```
+
+When making infrastructure adjustment you can check the differences before deploying by running the cdk diff command:
 ```
 cdk diff
 ```
-
 To deploy the content you can run the cdk deploy command:
-
 ```
 cdk deploy
 ```
 
 In order to destroy the stack, you can call the cdk destroy command:
-
 ```
 cdk destroy
 ```
 
-### Data
- Few words about the data used ...
+### Testing
+In order to allow for rapid testing of the application a simple .mp4 file has been provided which captures a conversation between 2 people recorded on Amazon Chime. The data is stored under the data/ directory. Before running the application it is necessary to first specify the email address which will subscribe to the SNS topic and hence receive the meeting summary. This can be done by updating the entry in **email_addresses.json** file. Once that has been done the mp4 file must be uploaded to the S3 BucketRecordings bucket, which will trigger the application.

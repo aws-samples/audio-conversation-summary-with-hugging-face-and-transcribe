@@ -20,6 +20,7 @@ S = boto3.Session()
 s3_client = S.client('s3')
 ts_client = S.client('transcribe')
 
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
 
 def lambda_handler(event, context):
     
@@ -47,7 +48,7 @@ def lambda_handler(event, context):
               'MaxSpeakerLabels': 10,
               },
               
-        OutputBucketName='infrastructurestack-buckettranscriptions97f46036-10x73hv781y2q',
+        OutputBucketName=BUCKET_NAME,
         OutputKey='TranscribeOutput/',
         )
     

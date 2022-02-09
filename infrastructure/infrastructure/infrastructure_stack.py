@@ -191,7 +191,7 @@ class InfrastructureStack(Stack):
             code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
             handler="index.lambda_handler",
             environment={
-                "BUCKET_NAME": bucket_recordings.bucket_name,
+                "BUCKET_NAME": bucket_transcriptions.bucket_name,
                 # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
