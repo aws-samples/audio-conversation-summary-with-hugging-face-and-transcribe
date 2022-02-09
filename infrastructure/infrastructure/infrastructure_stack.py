@@ -115,9 +115,10 @@ class InfrastructureStack(Stack):
 
         # SNS
         topic = _sns.Topic(self, "MeetingSummary", display_name="MeetingSummary")
-        with open('infrastructure/email_addresses.json', 'r') as f:
+        with open('email_addresses.json', 'r') as f:
             email_add = json.load(f)
         topic.add_subscription(_sns_subscriptions.EmailSubscription(email_add["email_addresses"][0]))
+        topic.add_subscription(_sns_subscriptions.EmailSubscription(email_add["email_addresses"][1]))
 
        # SageMaker Endpoint 
         huggingface_model = "google/pegasus-large"
