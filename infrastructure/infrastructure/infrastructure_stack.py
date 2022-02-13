@@ -18,7 +18,7 @@ import json
 
 sts = boto3.client("sts")
 account_id = sts.get_caller_identity()["Account"]
-account_region = "us-east-2"
+#account_region = "us-east-2"
 
 LATEST_PYTORCH_VERSION = "1.8.1"
 LATEST_TRANSFORMERS_VERSION = "4.10.2"
@@ -86,8 +86,10 @@ def get_image_uri(
 
 class InfrastructureStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+
         super().__init__(scope, construct_id, **kwargs)
 
+        account_region  = kwargs["env"].region
         # S3 Buckets
         bucket_recordings = _s3.Bucket(
             self,
@@ -136,11 +138,13 @@ class InfrastructureStack(Stack):
             iam.PolicyStatement(resources=["*"], actions=iam_sagemaker_actions)
         )
 
-        image_uri = get_image_uri(region=kwargs["env"].region)
+        image_uri = get_image_uri(account_region)
+
         container_environment = {
             "HF_MODEL_ID": huggingface_model,
             "HF_TASK": huggingface_task,
         }
+
         container = sagemaker.CfnModel.ContainerDefinitionProperty(
             environment=container_environment, image=image_uri
         )
@@ -182,6 +186,7 @@ class InfrastructureStack(Stack):
 
         endpoint_configuration.add_depends_on(model)
         endpoint.add_depends_on(endpoint_configuration)
+
 
         # Lambda: s3_transcribe
         my_function_handler_s3_transcribe = _lambda.Function(
