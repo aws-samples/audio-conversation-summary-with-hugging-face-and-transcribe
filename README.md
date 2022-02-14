@@ -1,7 +1,7 @@
 # Text Summarization
 
 
-![Architecture Diagram](AD.png)
+![Architecture Diagram](AD.jpg)
 
 ---
 
