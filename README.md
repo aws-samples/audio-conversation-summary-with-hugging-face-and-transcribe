@@ -16,7 +16,7 @@ This project showcases how to summarise a discussion from a virtual meeting (eg.
 
 ## How can this Project be used?
 
-This project provides Infrastructure-as-Code (IaC) scripts based on AWS CDK written in python language. This can be used to deploy all resources to a specified account and region and allows to test the application only within a few minutes. If you haven't used CDK before checkout the AWS developer guide https://docs.aws.amazon.com/cdk/v2/guide/home.html and make sure to install the CDK library and toolkit. A clear set of guidelines for deploying the stack are provided below under **How to deploy the CDK Stack (Mac OS) ?**
+This project provides Infrastructure-as-Code (IaC) scripts based on AWS CDK written in python language. This can be used to deploy all resources to a specified account and region and allows to test the application only within a few minutes. If you haven't used CDK before checkout the AWS developer guide https://docs.aws.amazon.com/cdk/v2/guide/home.html and make sure to install the CDK library and toolkit. A clear set of guidelines for deploying the stack are provided below under **How to deploy the CDK Stack ?**
 
 ### How to setup your Coding Environment?
 
@@ -24,7 +24,9 @@ This project provides Infrastructure-as-Code (IaC) scripts based on AWS CDK writ
 2. Download Visual Studio Code: https://code.visualstudio.com
 3. Clone the git repository: https://gitlab.aws.dev/sentichime/text-summarization.git
 
-### How to deploy the CDK Stack (Mac OS)?
+### How to deploy the CDK Stack?
+
+**Prerequisites:** AWS CLI v2, AWS CDK, Unix machine (recommended)
 
 "cd" into the infrastructure directory 
 
