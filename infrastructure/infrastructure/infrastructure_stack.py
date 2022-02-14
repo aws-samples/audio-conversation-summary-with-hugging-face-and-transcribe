@@ -125,9 +125,9 @@ class InfrastructureStack(Stack):
         huggingface_model = "google/pegasus-large"
         huggingface_task = "summarization"
         instance_type = "ml.m5.large" #"ml.m5.xlarge"
-        model_name = "senti-chime-model"
-        endpoint_config_name = "senti-chime-endpoint-config"
-        endpoint_name = "senti-chime-endpoint"
+        model_name = "text-summarization-model"
+        endpoint_config_name = "text-summarization-endpoint-config"
+        endpoint_name = "text-summarization-endpoint"
 
         role = iam.Role(
             self,
