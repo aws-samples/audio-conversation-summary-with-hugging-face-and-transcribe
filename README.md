@@ -2,7 +2,7 @@
 
 
 <center>
-    <img src="AD.png" width=1000/>
+    <img src="AD.png" width=700/>
 </center>
 
 ---
