@@ -29,7 +29,19 @@ This project provides Infrastructure-as-Code (IaC) scripts based on AWS CDK writ
 
 ### How to deploy the CDK Stack (Mac OS)?
 
-First "cd" into the infrastructure directory and setup your virtual environment using python:
+"cd" into the infrastructure directory 
+
+```
+cd infrastructure/
+```
+
+Add email addresses which will receive the meeting summary
+
+```
+edit infrastructure/email_addresses.json, and add a list of mail addresses
+```
+
+Setup your virtual environment using python:
 ```
 python3 -m venv .venv
 ```
@@ -44,9 +56,9 @@ Install the required packages:
 pip install -r requirements.txt
 ```
 
-Assume your isengard account:
+Validate the AWS credentials through AWS CLI:
 ```
-isengardcli assume
+aws configure 
 ```
 
 If you run cdk for the first time in the account and region you specified, you need to bootstrap cdk first:
