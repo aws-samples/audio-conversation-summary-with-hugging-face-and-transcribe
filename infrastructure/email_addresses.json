@@ -1,7 +1,14 @@
 {
     "_comment": "Please indicate the list of participants to be notified in the 'email_addresses' field below",
     "email_addresses":[
+<<<<<<< HEAD
         "bob@company.com",
         "alice@company.com"
         ]
+=======
+        "liurundo@amazon.com",
+        "garoga@amazon.com" 
+        
+    ]
+>>>>>>> 9bb22b0 (added the loop for the e-mail list)
 }
