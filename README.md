@@ -1,9 +1,7 @@
 # Text Summarization
 
 
-<center>
-    <img src="AD.png" width=700/>
-</center>
+![Architecture Diagram](AD.png)
 
 ---
 
