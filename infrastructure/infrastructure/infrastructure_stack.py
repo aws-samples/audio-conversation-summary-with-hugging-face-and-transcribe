@@ -124,7 +124,7 @@ class InfrastructureStack(Stack):
        # SageMaker Endpoint 
         huggingface_model = "google/pegasus-large"
         huggingface_task = "summarization"
-        instance_type = "ml.m5.xlarge"
+        instance_type = "ml.m5.large" #"ml.m5.xlarge"
         model_name = "senti-chime-model"
         endpoint_config_name = "senti-chime-endpoint-config"
         endpoint_name = "senti-chime-endpoint"
@@ -191,7 +191,7 @@ class InfrastructureStack(Stack):
         # Lambda: s3_transcribe
         my_function_handler_s3_transcribe = _lambda.Function(
             self,
-            "lambda_handler_s3_transcribe",
+            "LambdaS3Transcribe",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-transcribe"),
             handler="index.lambda_handler",
@@ -209,7 +209,7 @@ class InfrastructureStack(Stack):
 
         my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["logs:CreateLogStream","logs:PutLogEvents"],
-                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_transcribe:*"]))
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/LambdaS3Transcribe:*"]))
         
         my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["transcribe:GetTranscriptionJob","transcribe:StartTranscriptionJob"],
@@ -224,7 +224,7 @@ class InfrastructureStack(Stack):
         # Lambda: s3-sm-s3
         my_function_handler_s3_sm_s3 = _lambda.Function(
             self,
-            "lambda_handler_s3_sm_s3",
+            "LambdaS3SageMakerS3",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-sm-s3"),
             handler="index.lambda_handler",
@@ -245,7 +245,7 @@ class InfrastructureStack(Stack):
 
         my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["logs:CreateLogStream","logs:PutLogEvents"],
-                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sm_s3:*"]))
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/LambdaS3SageMakerS3:*"]))
         
         my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["transcribe:GetTranscriptionJob",
@@ -264,7 +264,7 @@ class InfrastructureStack(Stack):
         # Lambda: s3-sns
         my_function_handler_s3_sns = _lambda.Function(
             self,
-            "lambda_handler_s3_sns",
+            "LambdaS3SNS",
             runtime=_lambda.Runtime.PYTHON_3_8,
             code=_lambda.Code.from_asset("resources/lambda-s3-sns"),
             handler="index.lambda_handler",
@@ -284,7 +284,7 @@ class InfrastructureStack(Stack):
 
         my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["logs:CreateLogStream","logs:PutLogEvents"],
-                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/lambda_handler_s3_sns:*"]))
+                                                                            resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/LambdaS3SNS:*"]))
         
         my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["sns:Publish"],
