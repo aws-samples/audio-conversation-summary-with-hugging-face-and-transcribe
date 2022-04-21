@@ -5,7 +5,7 @@ import os
 import urllib
 from botocore.exceptions import ClientError
 from time import gmtime, strftime
-from parser import diarizer 
+from parser import transformer
 
 # Define the environment variables 
 ENDPOINT = os.environ['SM_ENDPOINT']
@@ -34,7 +34,7 @@ def lambda_handler(event, context):
     #print(type(result))
     #print(len(result))
     language_code = 'en-US'
-    result = diarizer(language_code, decoded_dict)
+    result = transformer(language_code, decoded_dict)
     print(len(result))
     
     n = 2000

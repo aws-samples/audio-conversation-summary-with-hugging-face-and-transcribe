@@ -45,12 +45,12 @@ def lambda_handler(event, context):
         Settings = {
               'ChannelIdentification': False,
               'ShowSpeakerLabels': True,
-              'MaxSpeakerLabels': 10,
+              'MaxSpeakerLabels': 2,
               },
               
         OutputBucketName=BUCKET_NAME,
         OutputKey='TranscribeOutput/',
-        )
+    )
     
     
 # print the result in the terminal, make sure you get the S3 URL to download the transcript JSON file
