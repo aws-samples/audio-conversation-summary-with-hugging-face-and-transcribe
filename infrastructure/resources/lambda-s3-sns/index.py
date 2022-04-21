@@ -16,6 +16,7 @@ def lambda_handler(event, context):
     content = json.loads(response['Body'].read())
     
     content_dic = content[0]
+    print(content_dic)
     
     if 'summary_text' in content_dic: 
         

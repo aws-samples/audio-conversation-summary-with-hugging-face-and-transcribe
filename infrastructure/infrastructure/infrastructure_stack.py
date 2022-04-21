@@ -18,7 +18,6 @@ import json
 
 sts = boto3.client("sts")
 account_id = sts.get_caller_identity()["Account"]
-#account_region = "us-east-2"
 
 LATEST_PYTORCH_VERSION = "1.8.1"
 LATEST_TRANSFORMERS_VERSION = "4.10.2"
@@ -124,12 +123,12 @@ class InfrastructureStack(Stack):
             topic.add_subscription(_sns_subscriptions.EmailSubscription(email_add["email_addresses"][i]))
 
        # SageMaker Endpoint 
-        huggingface_model = "google/pegasus-large"
+        huggingface_model = "lidiya/bart-large-xsum-samsum"
         huggingface_task = "summarization"
         instance_type = "ml.m5.large" #"ml.m5.xlarge"
-        model_name = "text-summarization-model"
-        endpoint_config_name = "text-summarization-endpoint-config"
-        endpoint_name = "text-summarization-endpoint"
+        model_name = "bart-large-summarization-model"
+        endpoint_config_name = "bart-large-summarization-endpoint-config"
+        endpoint_name = "bart-large-summarization-endpoint"
 
         role = iam.Role(
             self,
@@ -199,7 +198,6 @@ class InfrastructureStack(Stack):
             handler="index.lambda_handler",
             environment={
                 "BUCKET_NAME": bucket_transcriptions.bucket_name,
-                # "KEY": self.node.try_get_context("s3_lexicon_key")
             },
         )
         

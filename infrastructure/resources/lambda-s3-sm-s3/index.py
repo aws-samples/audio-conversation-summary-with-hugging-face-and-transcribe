@@ -5,8 +5,7 @@ import os
 import urllib
 from botocore.exceptions import ClientError
 from time import gmtime, strftime
-import time
-import re 
+from parser import diarizer 
 
 # Define the environment variables 
 ENDPOINT = os.environ['SM_ENDPOINT']
@@ -26,14 +25,16 @@ def lambda_handler(event, context):
     
     # get the object from the summary-input bucket 
     response = s3_client.get_object(Bucket=bucket, Key=key)
-    #print(f"Response parsed from {bucket}")
     
     decoded_string = response['Body'].read()
     
     decoded_dict = json.loads(decoded_string)
 
-    result = decoded_dict['results']['transcripts'][0]['transcript']
-    print(type(result))
+    #result = decoded_dict['results']['transcripts'][0]['transcript']
+    #print(type(result))
+    #print(len(result))
+    language_code = 'en-US'
+    result = diarizer(language_code, decoded_dict)
     print(len(result))
     
     n = 2000

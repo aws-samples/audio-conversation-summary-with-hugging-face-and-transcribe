@@ -19,11 +19,13 @@ InfrastructureStack(app, "Text-summarization-Infrastructure-stack",
     # Uncomment the next line if you know exactly what Account and Region you
     # want to deploy the stack to. */
     
-    env=cdk.Environment(account=os.environ.get("CDK_DEPLOY_ACCOUNT", os.environ["CDK_DEFAULT_ACCOUNT"]),
-                        region=os.environ.get("CDK_DEPLOY_REGION", os.environ["CDK_DEFAULT_REGION"])),
-
+    env=cdk.Environment(
+        region=os.environ.get("CDK_DEPLOY_REGION", os.environ["CDK_DEFAULT_REGION"]),
+        account=os.environ.get("CDK_DEPLOY_ACCOUNT", os.environ["CDK_DEFAULT_ACCOUNT"])  
+    #                    
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
+)
 
 app.synth()
 
