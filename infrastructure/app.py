@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
-
 import aws_cdk as cdk
-
+from cdk_nag import AwsSolutionsChecks  
+from aws_cdk import Aspects 
 from infrastructure.infrastructure_stack import InfrastructureStack
 
 app = cdk.App()
@@ -26,6 +26,6 @@ InfrastructureStack(app, "Text-summarization-Infrastructure-stack",
     # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
     )
 )
-
+#Aspects.of(app).add(AwsSolutionsChecks())
 app.synth()
 

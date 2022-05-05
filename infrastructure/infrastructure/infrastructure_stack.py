@@ -1,3 +1,4 @@
+# This is the infra stack for Meeting Summary 
 from aws_cdk import (
     Stack,
     aws_lambda as _lambda,
@@ -9,9 +10,12 @@ from aws_cdk import (
     aws_sns as _sns,
     aws_sns_subscriptions as _sns_subscriptions,
     aws_iam as iam,
+    aws_kms as kms, 
     aws_sagemaker as sagemaker,
     Environment,
+
 )
+
 from constructs import Construct
 import boto3
 import json
@@ -50,28 +54,6 @@ region_dict = {
     "us-west-2": "763104351884",
 }
 
-iam_sagemaker_actions = [
-    "sagemaker:*",
-    "ecr:GetDownloadUrlForLayer",
-    "ecr:BatchGetImage",
-    "ecr:BatchCheckLayerAvailability",
-    "ecr:GetAuthorizationToken",
-    "cloudwatch:PutMetricData",
-    "cloudwatch:GetMetricData",
-    "cloudwatch:GetMetricStatistics",
-    "cloudwatch:ListMetrics",
-    "logs:CreateLogGroup",
-    "logs:CreateLogStream",
-    "logs:DescribeLogStreams",
-    "logs:PutLogEvents",
-    "logs:GetLogEvents",
-    "s3:CreateBucket",
-    "s3:ListBucket",
-    "s3:GetBucketLocation",
-    "s3:GetObject",
-    "s3:PutObject",
-]
-
 
 def get_image_uri(
     region=None,
@@ -82,13 +64,13 @@ def get_image_uri(
     tag = f"{pytorch_version}-transformers{transformmers_version}-{'cpu-py36'}-ubuntu18.04"
     return f"{repository}:{tag}"
 
-
 class InfrastructureStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
         super().__init__(scope, construct_id, **kwargs)
 
         account_region  = kwargs["env"].region
+
         # S3 Buckets
         bucket_recordings = _s3.Bucket(
             self,
@@ -96,6 +78,10 @@ class InfrastructureStack(Stack):
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            enforce_ssl = True, 
+            encryption= _s3.BucketEncryption.S3_MANAGED,
+            server_access_logs_prefix = 'Server-Access-Logs',
+            block_public_access=_s3.BlockPublicAccess.BLOCK_ALL,
         )
 
         bucket_transcriptions = _s3.Bucket(
@@ -104,6 +90,10 @@ class InfrastructureStack(Stack):
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            enforce_ssl = True, 
+            encryption= _s3.BucketEncryption.S3_MANAGED,
+            server_access_logs_prefix = 'Server-Access-Logs',
+            block_public_access=_s3.BlockPublicAccess.BLOCK_ALL,
         )
 
         bucket_predictions = _s3.Bucket(
@@ -112,10 +102,24 @@ class InfrastructureStack(Stack):
             versioned=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
+            enforce_ssl = True, 
+            encryption= _s3.BucketEncryption.S3_MANAGED,
+            server_access_logs_prefix = 'Server-Access-Logs',
+            block_public_access=_s3.BlockPublicAccess.BLOCK_ALL,
+        )
+
+        # Add the Encyption Key for SNS Server Side Encryption 
+        SNS_encryption_key = kms.Key(self, "Key",
+                enable_key_rotation=True
         )
 
         # SNS
-        topic = _sns.Topic(self, "MeetingSummary", display_name="MeetingSummary")
+        topic = _sns.Topic(
+            self, "MeetingSummary", 
+            display_name="MeetingSummary", 
+            master_key=SNS_encryption_key,
+        )
+
         with open('email_addresses.json', 'r') as f:
             email_add = json.load(f)
 
@@ -123,7 +127,7 @@ class InfrastructureStack(Stack):
             topic.add_subscription(_sns_subscriptions.EmailSubscription(email_add["email_addresses"][i]))
 
        # SageMaker Endpoint 
-        huggingface_model = "lidiya/bart-large-xsum-samsum"
+        huggingface_model = "linydub/bart-large-samsum"
         huggingface_task = "summarization"
         instance_type = "ml.m5.large" #"ml.m5.xlarge"
         model_name = "bart-large-summarization-model"
@@ -135,9 +139,41 @@ class InfrastructureStack(Stack):
             "hf_sagemaker_execution_role",
             assumed_by=iam.ServicePrincipal("sagemaker.amazonaws.com"),
         )
+
+        iam_sagemaker_actions = [
+            "sagemaker:CreateEndpoint",
+            "sagemaker:CreateEndpointConfig",
+            "sagemaker:InvokeEndpoint",
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetAuthorizationToken",
+            "cloudwatch:PutMetricData",
+            "cloudwatch:GetMetricData",
+            "cloudwatch:GetMetricStatistics",
+            "cloudwatch:ListMetrics",
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:DescribeLogStreams",
+            "logs:PutLogEvents",
+            "logs:GetLogEvents",
+            "s3:CreateBucket",
+            "s3:ListBucket",
+            "s3:GetBucketLocation",
+            "s3:GetObject",
+            "s3:PutObject",
+        ]
+
+        iam_sageamker_resources = [
+            
+        ]
+
         role.add_to_policy(
             iam.PolicyStatement(resources=["*"], actions=iam_sagemaker_actions)
         )
+
+
+        ## ------ 
 
         image_uri = get_image_uri(account_region)
 
@@ -214,7 +250,18 @@ class InfrastructureStack(Stack):
         my_function_handler_s3_transcribe.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["transcribe:GetTranscriptionJob","transcribe:StartTranscriptionJob"],
                                                                             resources=["*"]))
-
+        #NagSuppressions.add_resource_suppressions(
+        #    my_function_handler_s3_transcribe,
+        #    [
+        #        {
+        #            'id': 'AwsSolutions-IAM5',
+        #            'reason':
+        #                "Suppress all AwsSolutions-IAM5 findings on my_function_handler_s3_transcribe.",
+        #        },
+        #    ],
+        #    True
+    
+        #)
 
         # Trigger
         notification_recordings = s3_notify.LambdaDestination(my_function_handler_s3_transcribe)
@@ -246,11 +293,6 @@ class InfrastructureStack(Stack):
         my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["logs:CreateLogStream","logs:PutLogEvents"],
                                                                             resources=[f"arn:aws:logs:{account_region}:{account_id}:log-group:/aws/lambda/LambdaS3SageMakerS3:*"]))
-        
-        my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
-                                                                            actions= ["transcribe:GetTranscriptionJob",
-                                                                                      "transcribe:StartTranscriptionJob"],
-                                                                            resources=["*"]))
 
         my_function_handler_s3_sm_s3.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["sagemaker:InvokeEndpointAsync"],
@@ -288,7 +330,12 @@ class InfrastructureStack(Stack):
         
         my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
                                                                             actions= ["sns:Publish"],
-                                                                            resources=["*"]))
+                                                                            resources=[topic.topic_arn]))
+
+        my_function_handler_s3_sns.add_to_role_policy(iam.PolicyStatement(effect= iam.Effect.ALLOW,
+                                                                            actions= ["kms:GenerateDataKey","kms:Decrypt"],
+                                                                            resources=[SNS_encryption_key.key_arn]))
+
 
         # Trigger
         notification_predictions = s3_notify.LambdaDestination(my_function_handler_s3_sns)
