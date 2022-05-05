@@ -1,4 +1,8 @@
-def diarizer(language_code, data): 
+import boto3 
+import os
+import json
+
+def transformer(language_code, data): 
 
     item_list = data['results']['items']
     speach_segment = data['results']['speaker_labels']['segments'] 
@@ -14,10 +18,8 @@ def diarizer(language_code, data):
     i = 0
     # All the speaker label in the same segment is produced by the same speaker 
     result = ''
-    counter = 0 
+
     for segment in speach_segment: 
-        #print(segment['start_time'], segment['end_time'], segment['speaker_label'])  #segment['items'])
-        #print(segment['items'])
 
         speaker_laebL_List = [sub_seg_item['speaker_label'] for sub_seg_item in segment['items']]
 
@@ -25,13 +27,12 @@ def diarizer(language_code, data):
 
             speaker = speaker_laebL_List[0]
             label = speaker[-1]
-            #print(label)
 
         else: 
 
-            raise NameError('More than one speaker presented in one segment of speech')
+            raise NameError('Error: More than one speaker presented in one segment of speech, response from Transcribe contians error')
 
-        segment_start_time = segment['items'][0]['start_time']
+        #segment_start_time = segment['items'][0]['start_time']
         segment_end_time = segment['items'][-1]['end_time']
 
         result += f"Speaker_{label}:"
@@ -51,12 +52,13 @@ def diarizer(language_code, data):
                         result += space + item_list[i]['alternatives'][0]['content']
                         
                         if item_list[i+1]['type'] == 'punctuation': 
-                            #if the sentencte ends with a ouncuation 
+                            #if the sentencte ends with a puncuation 
                         
                             result += item_list[i+1]['alternatives'][0]['content'] + ' '
+                            i += 1 
 
                         else: 
-                            #if the sentence does not end with a punctuation
+                            #if the sentence doesn't end with a punctuation
                             
                             result += ' '
                             #result += space + item_list[i+1]['alternatives'][0]['content'] + '.'
@@ -65,7 +67,6 @@ def diarizer(language_code, data):
                         
                         result += space +  item_list[i]['alternatives'][0]['content'] + '.'
                         
-                    #i += 1
                     end_segment_not_reached = True
 
                 else: 
@@ -77,15 +78,33 @@ def diarizer(language_code, data):
                     else: 
                         
                         result +=  space + item_list[i]['alternatives'][0]['content'] 
-
-
             else: 
-                
                 result += item_list[i]['alternatives'][0]['content'] 
             
             i+= 1 
-
-    #result = re.sub(r': .', ': ', result)
+            
     return result
 
+if __name__ == "__main__": 
+
+    S = boto3.Session(
+        
+        #aws_access_key_id = os.environ('')
+    )
+
+    s3_client = S.client("s3")
+
+    bucket = 'text-summarization-infra-buckettranscriptions97f4-1de5eyqdi9h16'
+    key = 'TranscribeOutput/job13-30-56.json'
+
+    response = s3_client.get_object(Bucket=bucket, Key=key)
+    
+    decoded_string = response['Body'].read()
+    
+    decoded_dict = json.loads(decoded_string)
+    
+    language_code = 'en-US'
+    result = transformer(language_code, decoded_dict)
+    print(result)
+    
 

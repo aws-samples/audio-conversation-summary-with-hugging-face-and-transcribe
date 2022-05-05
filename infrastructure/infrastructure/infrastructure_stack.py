@@ -5,14 +5,11 @@ from aws_cdk import (
     aws_s3 as _s3,
     aws_s3_notifications as s3_notify,
     RemovalPolicy,
-    # aws_s3_deployment as s3deploy,
-    aws_dynamodb as _dynamodb,
     aws_sns as _sns,
     aws_sns_subscriptions as _sns_subscriptions,
     aws_iam as iam,
     aws_kms as kms, 
     aws_sagemaker as sagemaker,
-    Environment,
 
 )
 
@@ -266,7 +263,9 @@ class InfrastructureStack(Stack):
         # Trigger
         notification_recordings = s3_notify.LambdaDestination(my_function_handler_s3_transcribe)
         notification_recordings.bind(self, bucket_recordings)
-        bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix='.mp4'))
+
+        for suffix in ['.mp4','.mp3','.wav', '.m4a']: 
+            bucket_recordings.add_object_created_notification(notification_recordings, _s3.NotificationKeyFilter(suffix=suffix))
 
         # Lambda: s3-sm-s3
         my_function_handler_s3_sm_s3 = _lambda.Function(

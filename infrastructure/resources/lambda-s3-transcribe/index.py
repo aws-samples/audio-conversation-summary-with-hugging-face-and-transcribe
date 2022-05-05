@@ -30,6 +30,16 @@ def lambda_handler(event, context):
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
     #print(key)
 
+    format = key.split('.')[-1]
+    if format in ['m4a','mp4']:
+        mediaformat = 'mp4' 
+    
+    if format in ['wav']: 
+        mediaformat = 'wav'
+
+    if format in ['mp3']: 
+        mediaformat = 'mp3'
+
     input_s3_uri = f"s3://{bucket}/{key}"
     
     now = datetime.now()
@@ -40,7 +50,7 @@ def lambda_handler(event, context):
     ts_client.start_transcription_job(
         TranscriptionJobName=job_name,
         Media={'MediaFileUri': input_s3_uri},
-        MediaFormat='mp4',
+        MediaFormat= mediaformat,
         LanguageCode='en-US', 
         Settings = {
               'ChannelIdentification': False,
