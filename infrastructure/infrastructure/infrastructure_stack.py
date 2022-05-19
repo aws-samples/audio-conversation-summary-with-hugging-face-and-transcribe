@@ -1,6 +1,5 @@
 # This is the infra stack for Meeting Summary
 import json
-
 import boto3
 from aws_cdk import RemovalPolicy, Stack
 from aws_cdk import aws_iam as iam
