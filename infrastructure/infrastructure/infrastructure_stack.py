@@ -10,6 +10,8 @@ from aws_cdk import aws_s3_notifications as s3_notify
 from aws_cdk import aws_sagemaker as sagemaker
 from aws_cdk import aws_sns as _sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
+from aws_cdk import CfnParameter 
+from aws_cdk import Fn
 from constructs import Construct
 
 sts = boto3.client("sts")
@@ -112,13 +114,27 @@ class InfrastructureStack(Stack):
             master_key=SNS_encryption_key,
         )
 
-        with open("email_addresses.json", "r") as f:
-            email_add = json.load(f)
+        #with open("email_addresses.json", "r") as f:
+        #    email_add = json.load(f)
+        ## adding the email list as a parameter 
+        emails = CfnParameter(
+            self, 
+            "ParticipatorEmailAddress", 
+            type="CommaDelimitedList",
+            description="The e-mail address of those who attended the meeting"
+        )
 
-        for i in range(len(email_add["email_addresses"])):
+        email_list = emails.value_as_list
+
+        for i in range(len(email_list)):
             topic.add_subscription(
-                sns_subscriptions.EmailSubscription(email_add["email_addresses"][i])
-            )
+                sns_subscriptions.EmailSubscription(Fn.select(i, email_list))
+             )
+
+        # for i in range(len(email_add["email_addresses"])):
+        #     topic.add_subscription(
+        #         sns_subscriptions.EmailSubscription(email_add["email_addresses"][i])
+        #     )
 
         # SageMaker Endpoint
         huggingface_model = "linydub/bart-large-samsum"
