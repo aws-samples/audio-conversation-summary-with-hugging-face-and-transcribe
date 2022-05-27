@@ -114,14 +114,12 @@ class InfrastructureStack(Stack):
             master_key=SNS_encryption_key,
         )
 
-        #with open("email_addresses.json", "r") as f:
-        #    email_add = json.load(f)
-        ## adding the email list as a parameter 
+
         emails = CfnParameter(
             self, 
             "ParticipatorEmailAddress", 
             type="CommaDelimitedList",
-            description="The e-mail address of those who attended the meeting"
+            description="The e-mail addresses of those who attended the meeting (list seperated with comma"
         )
 
         email_list = emails.value_as_list
@@ -130,11 +128,6 @@ class InfrastructureStack(Stack):
             topic.add_subscription(
                 sns_subscriptions.EmailSubscription(Fn.select(i, email_list))
              )
-
-        # for i in range(len(email_add["email_addresses"])):
-        #     topic.add_subscription(
-        #         sns_subscriptions.EmailSubscription(email_add["email_addresses"][i])
-        #     )
 
         # SageMaker Endpoint
         huggingface_model = "linydub/bart-large-samsum"
