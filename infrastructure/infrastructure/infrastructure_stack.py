@@ -119,7 +119,7 @@ class InfrastructureStack(Stack):
             self, 
             "ParticipatorEmailAddress", 
             type="CommaDelimitedList",
-            description="The e-mail addresses of those who attended the meeting (list seperated with comma"
+            description="The e-mail addresses of those who attended the meeting (list seperated with comma)"
         )
 
         email_list = emails.value_as_list
