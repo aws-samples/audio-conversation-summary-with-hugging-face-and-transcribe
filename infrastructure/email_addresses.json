@@ -1,7 +1,0 @@
-{
-    "_comment": "Please indicate the list of participants to be notified in the 'email_addresses' field below",
-    "email_addresses":[
-        "user1@xxx.com",
-        "user2@xxx.com"
-        ]
-}
