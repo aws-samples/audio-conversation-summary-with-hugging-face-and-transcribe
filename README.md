@@ -1,4 +1,4 @@
-# Text Summarization
+# Automate your phone call summaries with Amazon Transcribe and Hugging Face containers for Sagemaker
 
 
 ![Architecture Diagram](AD.png)
