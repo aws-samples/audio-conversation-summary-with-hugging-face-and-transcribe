@@ -86,4 +86,12 @@ cdk destroy
 ```
 
 ### How to test the Application ?
-In order to allow for rapid testing of the application a simple .mp4 file has been provided which captures a conversation between 2 people recorded on Amazon Chime. The data is stored under the data/ directory. Before running the application it is necessary to first specify the email address which will subscribe to the SNS topic and hence receive the meeting summary. This can be done by updating the entry in **email_addresses.json** file. Once that has been done the mp4 file must be uploaded to the S3 **BucketRecordings \<Random numbers added by CDK\>**  bucket, which will trigger the application.
+In order to allow for rapid testing of the application a simple .mp4 file has been provided which captures a conversation between 2 people recorded on Amazon Chime. The data is stored under the data/ directory. Before running the application it is necessary to first specify the email address which will subscribe to the SNS topic and hence receive the meeting summary. 
+
+This can be done by running the command below and replacing the placeholder email address with your own.
+
+```
+cdk deploy --parameters ParticipatorEmailAddress=<placeholder-email-address>
+```
+
+Once that has been done the mp4 file must be uploaded to the S3 **BucketRecordings \<Random numbers added by CDK\>**  bucket, which will trigger the application.
