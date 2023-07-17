@@ -1,4 +1,4 @@
-# Automate your phone call summaries with Amazon Transcribe and Hugging Face containers for Sagemaker
+# AI-Generated Conversation Summary leveraging Hugging Face Containers for Amazon Sagemaker and Amazon Transcribe
 
 
 ![Architecture Diagram](AD.png)
