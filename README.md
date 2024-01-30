@@ -1,4 +1,4 @@
-# AI-Generated Conversation Summary leveraging Hugging Face Containers for Amazon Bedrock and Amazon Transcribe
+# AI-Generated Conversation Summary leveraging Hugging Face Containers for Amazon Sagemaker and Amazon Transcribe
 
 
 ![Architecture Diagram](AD.png)
